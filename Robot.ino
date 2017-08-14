@@ -3,17 +3,26 @@
 #include <Servo.h>
 #include <NewPing.h>
 
+/*Setting untuk konversi menit ke waktu digital
+  Namun Karena mikrokontroler tidak bisa multitasking,
+  Jadi tidak digunakan*/
+#define SECS_PER_MIN  (60UL)
+#define numberOfSeconds(_time_) (_time_ % SECS_PER_MIN)  
+#define numberOfMinutes(_time_) ((_time_ / SECS_PER_MIN) % SECS_PER_MIN)
+
 /*Motor Driver L298N*/
 /*Left DC Motor*/
-const int ENA = 9;
+/*const int ENA = 9;*/
 const int IN1 = 8;
 const int IN2 = 7;
 /*Right DC Motor*/
-const int ENB = 6;
+/*const int ENB = 6;*/
 const int IN3 = 5;
 const int IN4 = 4;
 
 /*Bluetooth HC-05*/
+const int btPin = 2;
+boolean btConnected = false;
 char dataAndroidBit;
 String dataAndroid;
 
@@ -28,7 +37,7 @@ const int vacuumCleaner = 13;
 LiquidCrystal_I2C lcd(0x3F, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 
 /*Button Untuk Setting Waktu*/
-const int buttonWaktu = 12;
+const int buttonWaktu = 3;
 int buttonState = 0;
 int lastButtonState = 0;
 
@@ -45,25 +54,25 @@ int waktuOtomatisasi;
 #define echo_pin A2
 #define jarak_maximum 200
 NewPing ultrasonik(trig_pin, echo_pin, jarak_maximum);
-int jarak;
 
 /*Servo TowerPro SG90 9g*/
 Servo servo_ultrasonik;
 
 void setup() {
     /*Motor Driver L298N*/
-    pinMode(ENA, OUTPUT);
-    pinMode(ENB, OUTPUT);
+    /*pinMode(ENA, OUTPUT);*/
+    /*pinMode(ENB, OUTPUT);*/
     pinMode(IN1, OUTPUT);
     pinMode(IN2, OUTPUT);
     pinMode(IN3, OUTPUT);
     pinMode(IN4, OUTPUT);
     /*Kecepatan DC Motor*/
-    analogWrite(ENA, 100);
-    analogWrite(ENB, 100);
+    /*analogWrite(ENA, 150);*/
+    /*analogWrite(ENB, 150);*/
 
     /*Bluetooth HC-05: Setup Komunikasi Serial*/
     Serial.begin(9600);
+    pinMode(btPin, INPUT);
 
     /*Relay 5V (Vacuum Cleaner)*/
     pinMode(vacuumCleaner, OUTPUT);
@@ -79,9 +88,6 @@ void setup() {
 
 void pengontrolan() {
     if(Serial.available() > 0) {
-        /*Send Data Waktu Otomatisasi ke Android Ketika Bluetooth Terkoneksi*/
-        Serial.write(waktuOtomatisasi);
-
         dataAndroid = "";
     }
     while(Serial.available() > 0) {
@@ -126,13 +132,38 @@ void pengontrolan() {
     if(dataAndroid == "nv") {
         digitalWrite(vacuumCleaner, LOW);
     }
-    if(isDigit(dataAndroid.toInt())) {
+    if(dataAndroid.toInt()) {
         waktuOtomatisasi = dataAndroid.toInt();
     }
     if(dataAndroid == "0") {
         waktuOtomatisasi = 0;
     }
 }
+
+/*void time(int val){  */
+    /*int minutes = numberOfMinutes(val);*/
+    /*int seconds = numberOfSeconds(val);*/
+
+    /*lcd.setCursor(8,1);*/
+    /*lcd.print(minutes);*/
+    /*lcd.setCursor(10,1);*/
+    /*lcd.print(":");*/
+    /*lcd.setCursor(11,1);*/
+    /*lcd.print(seconds);*/
+/*}*/
+
+/*void timeCountDown() {*/
+    /*waktuOtomatisasi *= 60;*/
+    /*for(waktuOtomatisasi > 0; waktuOtomatisasi--;) {*/
+        /*lcd.clear();*/
+        /*lcd.setCursor(0,0);*/
+        /*lcd.print("Vacuum Robot");*/
+        /*lcd.setCursor(2,1);*/
+        /*lcd.print("Time:");*/
+        /*time(waktuOtomatisasi);*/
+        /*delay(1000);*/
+    /*}*/
+/*}*/
 
 void settingWaktu() {
     buttonState = digitalRead(buttonWaktu);
@@ -154,19 +185,21 @@ void settingWaktu() {
             lcd.print("Menit");
             countDownTime = 5;
         }
-    } 
-    delay(150);
-    lastButtonState = buttonState;
-    lcd.setCursor(15,0);
-    lcd.print(countDownTime);
-    if(countDownTime > 0) {
-        countDownTime -= 1;
-    } else if(countDownTime == 0) {
-        waktuOtomatisasi = pilihanWaktu[noPilihan];
-        lcd.setCursor(5,1);
-        lcd.print(hour:minute:second);
     }
-    delay(1000);
+    delay(100);
+    lastButtonState = buttonState;
+    if(buttonState != HIGH) {
+        lcd.setCursor(15,0);
+        lcd.print(countDownTime);
+        if(countDownTime > 0) {
+            countDownTime -= 1;
+        } else if(countDownTime == 0) {
+            waktuOtomatisasi = pilihanWaktu[noPilihan];
+            lcd.setCursor(15,0);
+            lcd.print("O");
+        }
+        delay(1000);
+    }
 }
 
 void maju() {
@@ -205,65 +238,113 @@ void berhenti() {
 }
 
 int bacaSensorUltrasonik() {
-    delay(100);
+    delay(70);
     int cm = ultrasonik.ping_cm();
     /*Jika cm = 0 maka Jarak terlalu jauh, sehingga jadikan 250cm*/
-    if (cm == 0){
-        cm=200;
+    if(cm == 0) {
+        cm=250;
     }
     return cm;
 }
 
 int bacaSensorUltrasonikKiri() {
-    servo_ultrasonik.write(170);
-    int jarakKiri = bacaSensorUltrasonik();
-    servo_ultrasonik.write(115);
-    return jarakKiri;
+    servo_ultrasonik.write(110);
+    delay(500);
+    int jki = bacaSensorUltrasonik();
+    delay(100);
+    servo_ultrasonik.write(60);
+    return jki;
 }
 
 int bacaSensorUltrasonikKanan() {
-    servo_ultrasonik.write(50);
-    int jarakKanan = bacaSensorUltrasonik();
-    servo_ultrasonik.write(115);
-    return jarakKanan;
+    servo_ultrasonik.write(10);
+    delay(500);
+    int jka = bacaSensorUltrasonik();
+    delay(100);
+    servo_ultrasonik.write(60);
+    return jka;
 }
 
 void cekKiriKanan() {
     int jarakKiri = 0;
     int jarakKanan = 0;
+    delay(50);
     jarakKiri = bacaSensorUltrasonikKiri();    
+    delay(300);
     jarakKanan = bacaSensorUltrasonikKanan();    
-    if(jarakKiri >= jarakKanan) {
-        belokKiri();
-        maju();
-    } else if(jarakKanan >= jarakKiri) {
-        belokKanan();
-        maju();
-    } else if(jarakKiri <= 3 && jarakKanan <= 3) {
+    delay(300);
+    if(jarakKiri <= 15 && jarakKanan <= 15) {
         mundur();
+        delay(200);
+        berhenti();
+        delay(300);
         cekKiriKanan();
+    } else if(jarakKiri > jarakKanan) {
+        belokKiri();
+        delay(200);
+        berhenti();
+    } else if(jarakKanan > jarakKiri) {
+        belokKanan();
+        delay(200);
+        berhenti();
     }
 }
 
+
 void otomatisasi() {
     uint32_t waktuOtomatisasiMillis = waktuOtomatisasi * 60000L;
-    for(uint32_t tStart = millis();  (millis()-tStart) < waktuOtomatisasiMillis;) {
+    uint32_t tStart = millis();
+    while(millis()-tStart < waktuOtomatisasiMillis) {
+        if(Serial.available() > 0) {
+            dataAndroid = "";
+        }
+        while(Serial.available() > 0) {
+            dataAndroidBit = ((byte)Serial.read());
+            if(dataAndroidBit == ':') {break;}
+            else {dataAndroid += dataAndroidBit;}
+            delay(1);
+        }
+        if(dataAndroid == "0") {
+            break;
+        }
         digitalWrite(vacuumCleaner, HIGH);
-        servo_ultrasonik.write(115);
-        jarak = bacaSensorUltrasonik();
-        if(jarak <= 3) {
+        servo_ultrasonik.write(60);
+        int jarak = bacaSensorUltrasonik();
+        if(jarak <= 15) {
+            berhenti();
+            delay(300);
+            mundur();
+            delay(200);
+            berhenti();
+            delay(300);
             cekKiriKanan();
         } else {
             maju();
         }
     }
-    digitalWrite(vacuumCleaner, LOW);
+    waktuOtomatisasi = 0;
     berhenti();
+    digitalWrite(vacuumCleaner, LOW);
+    /*Untuk Menghentikan Loop Otomatisasi*/
+    dataAndroid = "0";
 }
 
 void loop() {
-    pengontrolan();
-    if(waktuOtomatisasi == 0) {
+    if(!btConnected) {
+        if(digitalRead(btPin)==HIGH) {
+            btConnected = true;
+        }
+    }
+    if(btConnected) {
+        pengontrolan();
+        lcd.setCursor(2,1);
+        lcd.print("Pengontrolan");
+        lcd.setCursor(15,0);
+        lcd.print(" ");
+    } else if(!btConnected && waktuOtomatisasi == 0) {
         settingWaktu();
+    }
+    if(waktuOtomatisasi != 0) {
+        otomatisasi();
     }
 }
