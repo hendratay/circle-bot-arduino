@@ -2,6 +2,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <Servo.h>
 #include <NewPing.h>
+#include <TimerOne.h>
 
 /*Setting untuk konversi menit ke waktu digital
   Namun Karena mikrokontroler tidak bisa multitasking,
@@ -12,16 +13,17 @@
 
 /*Motor Driver L298N*/
 /*Left DC Motor*/
-/*const int ENA = 9;*/
-const int IN1 = 8;
-const int IN2 = 7;
+const int ENA = 6;
+const int IN1 = 10;
+const int IN2 = 9;
 /*Right DC Motor*/
-/*const int ENB = 6;*/
-const int IN3 = 5;
-const int IN4 = 4;
+const int ENB = 5;
+const int IN3 = 8;
+const int IN4 = 7;
 
 /*Bluetooth HC-05*/
-const int btPin = 2;
+/*pin state*/
+const int btPin = 3;
 boolean btConnected = false;
 char dataAndroidBit;
 String dataAndroid;
@@ -37,7 +39,7 @@ const int vacuumCleaner = 13;
 LiquidCrystal_I2C lcd(0x3F, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
 
 /*Button Untuk Setting Waktu*/
-const int buttonWaktu = 3;
+const int buttonWaktu = 2;
 int buttonState = 0;
 int lastButtonState = 0;
 
@@ -49,26 +51,38 @@ int countDownTime = 5;
 /*Waktu Otomatisasi untuk Robot*/
 int waktuOtomatisasi;
 
-/*Sensor Ultrasoink HC-SR04*/
-#define trig_pin A1
-#define echo_pin A2
-#define jarak_maximum 200
-NewPing ultrasonik(trig_pin, echo_pin, jarak_maximum);
+/*Limit Switch Sensor*/
+int middle = 4;
+int right = 11;
+int left = 12;
 
-/*Servo TowerPro SG90 9g*/
-Servo servo_ultrasonik;
+/*[>Speed encoder<]*/
+/*unsigned int counterLeft = 0;*/
+/*unsigned int counterRight = 0;*/
+/*int left;*/
+/*int right;*/
+/*int error = 0;*/
+
+/*[>Sensor Ultrasoink HC-SR04<]*/
+/*#define trig_pin A1*/
+/*#define echo_pin A2*/
+/*#define jarak_maximum 200*/
+/*NewPing ultrasonik(trig_pin, echo_pin, jarak_maximum);*/
+
+/*[>Servo TowerPro SG90 9g<]*/
+/*Servo servo_ultrasonik;*/
 
 void setup() {
     /*Motor Driver L298N*/
-    /*pinMode(ENA, OUTPUT);*/
-    /*pinMode(ENB, OUTPUT);*/
+    pinMode(ENA, OUTPUT);
+    pinMode(ENB, OUTPUT);
     pinMode(IN1, OUTPUT);
     pinMode(IN2, OUTPUT);
     pinMode(IN3, OUTPUT);
     pinMode(IN4, OUTPUT);
     /*Kecepatan DC Motor*/
-    /*analogWrite(ENA, 150);*/
-    /*analogWrite(ENB, 150);*/
+    analogWrite(ENA, 140);
+    analogWrite(ENB, 120);
 
     /*Bluetooth HC-05: Setup Komunikasi Serial*/
     Serial.begin(9600);
@@ -82,8 +96,13 @@ void setup() {
     lcd.setCursor(0,0);
     lcd.print("Vacuum Robot");
 
-    /*Servo di bawah ultrasonik*/
-    servo_ultrasonik.attach(10); // Perlu PWM
+    /*Limit Switch Sensor*/
+    pinMode(middle, INPUT);
+    pinMode(left, INPUT);
+    pinMode(right, INPUT);
+
+    /*[>Servo di bawah ultrasonik<]*/
+    /*servo_ultrasonik.attach(11); // Perlu PWM*/
 }
 
 void pengontrolan() {
@@ -109,14 +128,14 @@ void pengontrolan() {
         digitalWrite(IN4, HIGH);
     }
     if(dataAndroid == "l") {
-        digitalWrite(IN1, LOW);
-        digitalWrite(IN3, HIGH);
+        digitalWrite(IN1, HIGH);
+        digitalWrite(IN3, LOW);
         digitalWrite(IN2, LOW);
         digitalWrite(IN4, LOW);
     }
     if(dataAndroid == "r") {
-        digitalWrite(IN1, HIGH);
-        digitalWrite(IN3, LOW);
+        digitalWrite(IN1, LOW);
+        digitalWrite(IN3, HIGH);
         digitalWrite(IN2, LOW);
         digitalWrite(IN4, LOW);
     }
@@ -204,8 +223,8 @@ void settingWaktu() {
 
 void maju() {
     digitalWrite(IN1, HIGH);
-    digitalWrite(IN3, HIGH);
     digitalWrite(IN2, LOW);
+    digitalWrite(IN3, HIGH);
     digitalWrite(IN4, LOW);
 }
 
@@ -218,8 +237,8 @@ void mundur() {
 
 void belokKiri() {
     digitalWrite(IN1, HIGH);
-    digitalWrite(IN3, LOW);
     digitalWrite(IN2, LOW);
+    digitalWrite(IN3, LOW);
     digitalWrite(IN4, LOW);
 }
 
@@ -237,62 +256,126 @@ void berhenti() {
     digitalWrite(IN4, LOW);
 }
 
-int bacaSensorUltrasonik() {
-    delay(70);
-    int cm = ultrasonik.ping_cm();
-    /*Jika cm = 0 maka Jarak terlalu jauh, sehingga jadikan 250cm*/
-    if(cm == 0) {
-        cm=250;
-    }
-    return cm;
-}
+/*void countLeft() { counterLeft++; }*/
+/*void countRight() { counterRight++; }*/
 
-int bacaSensorUltrasonikKiri() {
-    servo_ultrasonik.write(110);
-    delay(500);
-    int jki = bacaSensorUltrasonik();
-    delay(100);
-    servo_ultrasonik.write(60);
-    return jki;
-}
+/*void timerOne() {*/
+    /*Timer1.detachInterrupt();*/
+    /*int rotationLeft = (counterLeft / 20);  // divide by number of holes in Disc*/
+    /*left = rotationLeft;*/
+    /*counterLeft=0;  //  reset counter to zero*/
+    /*int rotationRight = (counterRight / 20);  // divide by number of holes in Disc*/
+    /*right = rotationRight;*/
+    /*counterRight=0;  //  reset counter to zero*/
+/*}*/
 
-int bacaSensorUltrasonikKanan() {
-    servo_ultrasonik.write(10);
-    delay(500);
-    int jka = bacaSensorUltrasonik();
-    delay(100);
-    servo_ultrasonik.write(60);
-    return jka;
-}
+/*boolean bacaSensorIR() {*/
+    /*boolean middle;*/
+    /*if(digitalRead(middle) == LOW) {*/
+        /*middle = true; */
+    /*} else {*/
+        /*middle = false;*/
+    /*}*/
+    /*return middle;*/
+/*}*/
 
-void cekKiriKanan() {
-    int jarakKiri = 0;
-    int jarakKanan = 0;
-    delay(50);
-    jarakKiri = bacaSensorUltrasonikKiri();    
-    delay(300);
-    jarakKanan = bacaSensorUltrasonikKanan();    
-    delay(300);
-    if(jarakKiri <= 15 && jarakKanan <= 15) {
-        mundur();
-        delay(200);
-        berhenti();
-        delay(300);
-        cekKiriKanan();
-    } else if(jarakKiri > jarakKanan) {
-        belokKiri();
-        delay(200);
-        berhenti();
-    } else if(jarakKanan > jarakKiri) {
-        belokKanan();
-        delay(200);
-        berhenti();
-    }
-}
+/*boolean bacaKiri() {*/
+    /*boolean kiri;*/
+    /*if(digitalRead(irLeft) == LOW) {*/
+        /*kiri = true; */
+    /*} else {*/
+        /*kiri = false;*/
+    /*}*/
+    /*return kiri;*/
+/*}*/
 
+/*boolean bacaKanan() {*/
+    /*boolean kanan;*/
+    /*if(digitalRead(irRight) == LOW) {*/
+        /*kanan = true; */
+    /*} else {*/
+        /*kanan = false;*/
+    /*}*/
+    /*return kanan;*/
+/*}*/
+
+/*void cekIR() {*/
+    /*boolean jarakKiri = bacaKiri();*/
+    /*boolean jarakKanan = bacaKanan();*/
+    /*if(jarakKiri && jarakKanan) {*/
+        /*mundur();*/
+        /*delay(1000);*/
+        /*berhenti();*/
+        /*delay(300);*/
+        /*cekIR();*/
+    /*} else if(!jarakKiri && !jarakKanan) {*/
+        /*mundur();*/
+        /*delay(1500);*/
+        /*berhenti();*/
+        /*delay(300);*/
+        /*belokKanan();*/
+        /*delay(1000);*/
+    /*} else if(jarakKiri && !jarakKanan) {*/
+        /*belokKiri();*/
+        /*delay(1000);*/
+    /*} else if(jarakKanan && !jarakKiri) {*/
+        /*belokKanan();*/
+        /*delay(1000);*/
+    /*}*/
+/*}*/
+
+/*int bacaSensorUltrasonik() {*/
+    /*delay(100);*/
+    /*int cm = ultrasonik.ping_cm();*/
+    /*[>Jika cm = 0 maka Jarak terlalu jauh, sehingga jadikan 250cm<]*/
+    /*if(cm == 0) { cm=250; }*/
+    /*return cm;*/
+/*}*/
+
+/*int bacaSensorUltrasonikKiri() {*/
+    /*delay(500);*/
+    /*int jki = bacaSensorUltrasonik();*/
+    /*delay(100);*/
+    /*servo_ultrasonik.write(60);*/
+    /*return jki;*/
+/*}*/
+
+/*int bacaSensorUltrasonikKanan() {*/
+    /*servo_ultrasonik.write(10);*/
+    /*delay(500);*/
+    /*int jka = bacaSensorUltrasonik();*/
+    /*delay(100);*/
+    /*servo_ultrasonik.write(60);*/
+    /*return jka;*/
+/*}*/
+
+/*void cekKiriKanan() {*/
+    /*int jarakKiri = 0;*/
+    /*int jarakKanan = 0;*/
+    /*delay(50);*/
+    /*jarakKiri = bacaSensorUltrasonikKiri();    */
+    /*delay(300);*/
+    /*jarakKanan = bacaSensorUltrasonikKanan();    */
+    /*delay(300);*/
+    /*if(jarakKiri <= 16 && jarakKanan <= 16) {*/
+        /*mundur();*/
+        /*delay(200);*/
+        /*berhenti();*/
+        /*delay(300);*/
+        /*cekKiriKanan();*/
+    /*} else if(jarakKiri > jarakKanan) {*/
+        /*belokKiri();*/
+        /*delay(800);*/
+        /*berhenti();*/
+    /*} else if(jarakKanan > jarakKiri) {*/
+        /*belokKanan();*/
+        /*delay(800);*/
+        /*berhenti();*/
+    /*}*/
+/*}*/
 
 void otomatisasi() {
-    uint32_t waktuOtomatisasiMillis = waktuOtomatisasi * 60000L;
+    uint32_t waktuOtomatisasiMillis = 3 * 60000L;
     uint32_t tStart = millis();
     while(millis()-tStart < waktuOtomatisasiMillis) {
         if(Serial.available() > 0) {
@@ -308,19 +391,27 @@ void otomatisasi() {
             break;
         }
         digitalWrite(vacuumCleaner, HIGH);
-        servo_ultrasonik.write(60);
-        int jarak = bacaSensorUltrasonik();
-        if(jarak <= 15) {
-            berhenti();
-            delay(300);
-            mundur();
-            delay(200);
-            berhenti();
-            delay(300);
-            cekKiriKanan();
-        } else {
-            maju();
-        }
+        /*servo_ultrasonik.write(60);*/
+        /*int jarak = bacaSensorUltrasonik();*/
+        /*boolean jarak = bacaSensorIR();*/
+        /*if (jarak) {*/
+            /*berhenti();*/
+            /*delay(300);*/
+            /*[>cekIR();<]*/
+        /*} else {*/
+            /*maju();*/
+        /*}*/
+        /*if(jarak <= 10) {*/
+            /*berhenti();*/
+            /*delay(300);*/
+            /*mundur();*/
+            /*delay(300);*/
+            /*berhenti();*/
+            /*delay(300);*/
+            /*cekKiriKanan();*/
+        /*} else {*/
+            /*maju();*/
+        /*}*/
     }
     waktuOtomatisasi = 0;
     berhenti();
@@ -330,6 +421,12 @@ void otomatisasi() {
 }
 
 void loop() {
+    /*[>Setting Timer selama 1 detik<]*/
+    /*Timer1.initialize(1000000);*/
+    /*attachInterrupt(0, countLeft, RISING);*/
+    /*attachInterrupt(1, countRight, RISING);*/
+    /*Timer1.attachInterrupt(timerOne);*/
+
     if(!btConnected) {
         if(digitalRead(btPin)==HIGH) {
             btConnected = true;
