@@ -34,7 +34,7 @@ int buttonState = 0;
 int lastButtonState = 0;
 
 /*Setting Waktu Otomatisasi*/
-int pilihanWaktu[] = {0, 5, 10, 30, 60};
+int pilihanWaktu[] = {0, 1, 2, 30, 60};
 int noPilihan = 0;
 int countDownTime = 5;
 
@@ -43,8 +43,8 @@ int waktuOtomatisasi;
 
 /*Limit Switch Sensor*/
 int middle = 4;
-int right = 11;
-int left = 12;
+int left = 11;
+int right = 12;
 
 void setup() {
     /*Motor Driver L298N*/
@@ -157,6 +157,7 @@ void settingWaktu() {
         lcd.setCursor(15,0);
         lcd.print(countDownTime);
         if(countDownTime > 0) {
+            dataAndroid = ""; // Untuk atur dataAndroid tidak 0
             countDownTime -= 1;
         } else if(countDownTime == 0) {
             waktuOtomatisasi = pilihanWaktu[noPilihan];
@@ -203,7 +204,7 @@ void berhenti() {
 }
 
 void otomatisasi() {
-    uint32_t waktuOtomatisasiMillis = 3 * 60000L;
+    uint32_t waktuOtomatisasiMillis = waktuOtomatisasi * 60000L;
     uint32_t tStart = millis();
     while(millis()-tStart < waktuOtomatisasiMillis) {
         if(Serial.available() > 0) {
@@ -219,10 +220,48 @@ void otomatisasi() {
             break;
         }
         digitalWrite(vacuumCleaner, HIGH);
+        int rightBumper = digitalRead(right);
+        int middleBumper = digitalRead(middle);
+        int leftBumper = digitalRead(left);
+        int randNumber;
+        if(middleBumper == 1) {
+            berhenti();
+            delay(100);
+            mundur();
+            delay(800);
+            randNumber = random(1,3);
+            if(randNumber == 1) {
+                belokKanan();
+                delay(900);
+            } else {
+                belokKiri();
+                delay(900);
+            }
+        } else if(leftBumper == 1) {
+            berhenti();
+            delay(100);
+            mundur();
+            delay(800);
+            belokKanan();
+            delay(900);
+        } else if(rightBumper == 1) {
+            berhenti();
+            delay(100);
+            mundur();
+            delay(800);
+            belokKiri();
+            delay(900);
+        } else {
+            maju();
+        }
     }
     waktuOtomatisasi = 0;
     berhenti();
     digitalWrite(vacuumCleaner, LOW);
+    if(!btConnected) {
+        lcd.setCursor(5,1);
+        lcd.print("        ");
+    }
     /*Untuk Menghentikan Loop Otomatisasi*/
     dataAndroid = "0";
 }
@@ -239,7 +278,8 @@ void loop() {
         lcd.print("Pengontrolan");
         lcd.setCursor(15,0);
         lcd.print(" ");
-    } else if(!btConnected && waktuOtomatisasi == 0) {
+    }
+    if(!btConnected && waktuOtomatisasi == 0) {
         settingWaktu();
     }
     if(waktuOtomatisasi != 0) {
