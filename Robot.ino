@@ -55,8 +55,8 @@ void setup() {
     pinMode(IN3, OUTPUT);
     pinMode(IN4, OUTPUT);
     /*Kecepatan DC Motor*/
-    analogWrite(ENA, 140);
-    analogWrite(ENB, 120);
+    analogWrite(ENA, 150);
+    analogWrite(ENB, 130);
 
     /*Bluetooth HC-05: Setup Komunikasi Serial*/
     Serial.begin(9600);
@@ -232,10 +232,10 @@ void otomatisasi() {
             randNumber = random(1,3);
             if(randNumber == 1) {
                 belokKanan();
-                delay(900);
+                delay(1200);
             } else {
                 belokKiri();
-                delay(900);
+                delay(1200);
             }
         } else if(leftBumper == 1) {
             berhenti();
@@ -243,14 +243,14 @@ void otomatisasi() {
             mundur();
             delay(800);
             belokKanan();
-            delay(900);
+            delay(1200);
         } else if(rightBumper == 1) {
             berhenti();
             delay(100);
             mundur();
             delay(800);
             belokKiri();
-            delay(900);
+            delay(1200);
         } else {
             maju();
         }
@@ -286,3 +286,4 @@ void loop() {
         otomatisasi();
     }
 }
+
